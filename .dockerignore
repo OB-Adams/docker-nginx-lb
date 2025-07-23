@@ -1,0 +1,43 @@
+# Node.js
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Next.js build output
+.next
+out
+
+# Logs
+logs
+*.log
+
+# Git & VCS
+.git
+.gitignore
+
+# dotenv and secrets
+.env
+.env.*
+!.env.example
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Editor/project configs
+.vscode
+.idea
+
+# Docker files you don't want in image
+docker-compose.yml
+docker-compose.override.yml
+Dockerfile.*
+
+# Testing/coverage
+coverage
+*.lcov
+
+# Misc
+*.swp
+*.swo

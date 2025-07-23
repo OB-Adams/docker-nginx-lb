@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-bold;
+  }
+
+  h1 {
+    @apply text-4xl;
+  }
+  h2 {
+    @apply text-2xl;
+  }
+  h3 {
+    @apply text-2xl;
+  }
+  h4 {
+    @apply text-xl;
+  }
+  p {
+    @apply text-sm text-white;
+  }
+
+  form {
+    @apply rounded-xl p-4;
+  }
+
+  input,
+  select,
+  textarea {
+  @apply m-1 rounded bg-gray-600 p-1;
+  }
+}
+
+@layer components {
+  .icon {
+    @apply text-white text-xl;
+  }
+
+  .btn {
+    @apply hover:no-underline bg-blue-400 hover:bg-blue-300 w-full tracking-wider text-center text-black font-bold cursor-pointer uppercase px-4 py-2 rounded-md;
+  }
+}

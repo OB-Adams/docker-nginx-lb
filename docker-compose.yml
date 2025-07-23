@@ -1,0 +1,92 @@
+services:
+  web-app-1:
+    image: web-app-ticket
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: web-app-1
+    restart: unless-stopped
+    env_file:
+      - .env
+    expose:
+      - "3000"
+    environment:
+      - NEXT_PUBLIC_APP_NAME=App1
+      - MONGODB_URI=${MONGODB_URI}
+
+  web-app-2:
+    image: web-app-ticket
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: web-app-2
+    restart: unless-stopped
+    env_file:
+      - .env
+    expose: 
+      - "3000"
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - NEXT_PUBLIC_APP_NAME=App2
+
+  web-app-3:
+    image: web-app-ticket
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: web-app-3
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - NEXT_PUBLIC_APP_NAME=App3
+    expose:
+      - "3000"
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-lb
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs
+    depends_on:
+      - web-app-1
+      - web-app-2
+      - web-app-3
+
+  mongodb:
+    image: mongo:8.0
+    container_name: mongodb
+    restart: unless-stopped
+    expose:
+      - 27017:27017
+    env_file:
+      - .env
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    volumes:
+      - mongodb-data:/data/db
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: unless-stopped
+    expose:
+      - 8081:8081
+    env_file:
+      - .env
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${ME_CONFIG_MONGODB_ADMINUSERNAME}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${ME_CONFIG_MONGODB_ADMINPASSWORD}
+      - ME_CONFIG_BASICAUTH_USERNAME=${ME_CONFIG_BASICAUTH_USERNAME}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${ME_CONFIG_BASICAUTH_PASSWORD}
+
+volumes:
+  mongodb-data:
