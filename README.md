@@ -1,53 +1,57 @@
-# 🧾 Ticketing App – Reverse Proxy Load Balanced with NGINX & HTTPS
+# 🧾 Ticketing App – Load Balanced with NGINX & HTTPS
 
-This is my containerized **Ticketing App** deployed using **Docker Compose**. It features a robust reverse proxy load balancing setup using **NGINX**, three replicated **Next.js web-app** instances, a **MongoDB** database, and **Mongo Express** for UI-based database inspection. SSL is handled via **self-signed certificates**, making it accessible securely via `https://localhost`.
+This is my containerized **Ticketing App** deployed using **Docker Compose**. It uses **NGINX as a reverse proxy** and **load balancer** to evenly distribute traffic across three replicated web app instances. Each instance is a **Next.js** app connected to a shared **MongoDB** database, with **Mongo Express** for database management. The app is secured using **HTTPS with self-signed certificates**.
 
 ---
 
-## 🚀 Architecture
+## 🧠 Architecture Overview
 
 ```
-                 ┌────────────┐
-                 │   Client   │
-                 └─────┬──────┘
-                       │  HTTPS (443)
-                       ▼
-               ┌───────────────┐
-               │   NGINX LB    │
-               └─────┬─────────┘
-                     ▼
-        ┌────────────┴────────────┐
-        │     Load Balanced       │
-        │     Web App Pool        │
-        │  ┌─────────┬─────────┐  │
-        │  │ web-app-1 │ web-app-2 │ ... web-app-3
-        │  └─────────┴─────────┘  │
-        └────────────┬────────────┘
-                     ▼
-              ┌────────────┐
-              │  MongoDB   │
-              └────┬───────┘
-                   ▼
-           ┌──────────────┐
-           │ Mongo Express│
-           └──────────────┘
+                      ┌────────────┐
+                      │   Browser  │
+                      └─────┬──────┘
+                            │
+                     ┌──────▼──────┐
+                     │    NGINX    │
+                     │  (Reverse   │
+                     │   Proxy +   │
+                     │ Load Balancer)
+                     └──────┬──────┘
+            ┌───────────────┼────────────────┐
+            ▼               ▼                ▼
+      ┌──────────┐    ┌──────────┐     ┌──────────┐
+      │ web-app-1│    │ web-app-2│     │ web-app-3│
+      └────┬─────┘    └────┬─────┘     └────┬─────┘
+           │               │                │
+           └──────┬────────┴────────┬───────┘
+                  ▼                 ▼
+                     ┌────────────────┐
+                     │    MongoDB     │
+                     └────────────────┘
+                            │
+                            ▼
+                   ┌──────────────────┐
+                   │  Mongo Express   │
+                   └──────────────────┘
 ```
 
 ---
 
 ## ⚙️ Features
 
-- ✅ **Reverse Proxy** via NGINX
-- 🔁 **Least Connection Load Balancing**
-- 🔒 **HTTPS with Self-Signed Certificates**
-- 🧱 **Modular Docker Services**
-- 🐳 **MongoDB + Mongo Express UI**
+- ✅ **Reverse proxy** for secure centralized routing
+- 🔁 **Load balancing** using `least_conn` (least number of active connections)
+- 🧩 **Three replicated web-app containers**
+- 🔒 **HTTPS using self-signed certificates**
+- 🧱 **MongoDB** for persistence
+- 💻 **Mongo Express** for UI-based DB access
+- 📦 Fully containerized with Docker Compose
 
 ---
 
-## 🧩 NGINX Configuration
+## 🔧 NGINX Configuration
 
-I configured NGINX as both an SSL terminator and a load balancer using the `least_conn` algorithm to evenly distribute load across the three web-app containers. Here's the full `nginx.conf` file:
+Here’s the full `nginx.conf` I’m using inside the `nginx/` directory:
 
 ```nginx
 worker_processes 1;
@@ -94,20 +98,43 @@ http {
 }
 ```
 
+The key part is:
+
+```nginx
+upstream ticketing_upstream {
+    least_conn;
+    ...
+}
+```
+
+which uses the **least connections algorithm** to direct new requests to the container with the fewest active connections.
+
 ---
 
-## 📦 Docker Compose Overview
+## 📦 Docker Compose Summary
 
-- **Three replicated Next.js apps**: `web-app-1`, `web-app-2`, and `web-app-3`
-- **NGINX container**: Mounted with the config and certs
-- **MongoDB and Mongo Express** containers
-- Exposes both `80` and `443` on the NGINX container for HTTP->HTTPS redirection and secure access
+My `docker-compose.yml` file defines:
+
+- **Three replicas** of the Next.js app (`web-app-1`, `web-app-2`, `web-app-3`)
+- **NGINX** for load balancing and HTTPS termination
+- **MongoDB** database
+- **Mongo Express** UI for DB management
+
+NGINX mounts both the custom `nginx.conf` and self-signed certificates.
+
+It exposes ports:
+
+```yaml
+ports:
+  - "80:80"
+  - "443:443"
+```
 
 ---
 
-## 🔐 Self-Signed Certificates
+## 🔐 Self-Signed HTTPS
 
-The certificates are generated using OpenSSL and **not committed to the repo** (they're mounted via volume). Example command used:
+I generated my certs using:
 
 ```bash
 openssl req -x509 -nodes -days 365 \
@@ -116,50 +143,55 @@ openssl req -x509 -nodes -days 365 \
   -out nginx-selfsigned.crt
 ```
 
-They are stored locally in `./nginx/certs/` and mounted into the NGINX container at `/etc/nginx/certs`.
+They’re placed in `nginx/certs/` and **not committed to the repo**. They're mounted inside the container at `/etc/nginx/certs/`.
 
 ---
 
-## 🏁 Usage
+## 🛠️ Getting Started
 
 1. Clone the repo
-2. Generate self-signed certs in `nginx/certs/`
-3. Run with Docker Compose:
+2. Create a `.env` file based on the example
+3. Generate self-signed certs in `nginx/certs/`
+4. Start the stack:
 
 ```bash
 docker compose up --build
 ```
 
-4. Visit your app at:  
-   🔗 https://localhost  
-   🧪 Accept the self-signed cert in your browser
+Then open [https://localhost](https://localhost) and accept the self-signed cert warning in your browser.
 
 ---
 
-## ❗ Note
-
-> I’ve excluded the certificate files from this repo for security reasons. You’ll need to generate your own in the `nginx/certs/` directory.
-
----
-
-## 📂 Repo Structure
+## 📁 Repo Structure
 
 ```
 ticketing-app/
-│
 ├── nginx/
 │   ├── nginx.conf
 │   └── certs/
 │       ├── nginx-selfsigned.crt
 │       └── nginx-selfsigned.key
-├── Dockerfile
 ├── docker-compose.yml
 ├── .env
-└── ...
+├── Dockerfile
+└── (web app source files)
 ```
+
+---
+
+## 🛑 .gitignore Note
+
+Make sure you’ve added:
+
+```
+nginx/certs/*
+!.gitkeep
+```
+
+to avoid pushing the private key and certificate.
 
 ---
 
 ## 📜 License
 
-MIT – feel free to use, modify, and share.
+MIT – free to use, modify, and distribute.
